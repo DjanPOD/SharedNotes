@@ -1,0 +1,204 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}UVANotes - Share & Collaborate{% endblock %}
+
+{% block content %}
+{% if not user.is_authenticated %}
+    <!-- Section for Non-Authenticated Users -->
+    <div class="px-4 py-5 my-5 text-center">
+        <h1 class="display-4 fw-bold text-primary mb-4">Welcome to UVANotes</h1>
+        <div class="col-lg-6 mx-auto">
+            <p class="lead mb-4">
+                Your collaborative space for sharing and managing academic resources at UVA.
+                Connect with classmates, share notes, and enhance your learning experience.
+            </p>
+            <div class="d-grid gap-2 d-sm-flex justify-content-sm-center mb-5">
+                <a href="{% url 'login:login' %}" class="btn btn-primary btn-lg px-4 me-sm-3">Get Started</a>
+                <a href="{% url 'login:anonymous_login' %}" class="btn btn-outline-secondary btn-lg px-4">View Classes and Projects</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Features Section -->
+    <div class="container px-4 py-5">
+        <h2 class="pb-2 border-bottom text-center mb-5">Key Features</h2>
+        
+        <div class="row g-4 py-5 row-cols-1 row-cols-lg-3">
+            <!-- Project Management -->
+            <div class="col d-flex align-items-start">
+                <div class="icon-square text-body-emphasis bg-body-secondary d-inline-flex align-items-center justify-content-center fs-4 flex-shrink-0 me-3">
+                    <i class="bi bi-folder-fill text-primary"></i>
+                </div>
+                <div>
+                    <h3 class="fs-2">Project Management</h3>
+                    <p>Create and organize projects for your classes. Collaborate with classmates and share resources efficiently.</p>
+                </div>
+            </div>
+
+            <!-- Document Sharing -->
+            <div class="col d-flex align-items-start">
+                <div class="icon-square text-body-emphasis bg-body-secondary d-inline-flex align-items-center justify-content-center fs-4 flex-shrink-0 me-3">
+                    <i class="bi bi-file-earmark-text-fill text-primary"></i>
+                </div>
+                <div>
+                    <h3 class="fs-2">Document Sharing</h3>
+                    <p>Upload, view, and share documents with your classmates. Like and comment on helpful resources.</p>
+                </div>
+            </div>
+
+            <!-- User Profiles -->
+            <div class="col d-flex align-items-start">
+                <div class="icon-square text-body-emphasis bg-body-secondary d-inline-flex align-items-center justify-content-center fs-4 flex-shrink-0 me-3">
+                    <i class="bi bi-person-circle text-primary"></i>
+                </div>
+                <div>
+                    <h3 class="fs-2">User Profiles</h3>
+                    <p>Create your profile, connect with other students, and build your academic network.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Feature List Section -->
+    <ul class="list-unstyled text-center feature-list">
+        <li class="feature-item mb-4 hover-lift">
+            <div class="feature-icon">
+                <i class="bi bi-search text-primary"></i>
+            </div>
+            <div class="feature-content">
+                <h3 class="h5 mb-2">Smart Search</h3>
+                <p class="text-muted">Easily find documents across all projects you are a member of</p>
+            </div>
+        </li>
+        <li class="feature-item mb-4 hover-lift">
+            <div class="feature-icon">
+                <i class="bi bi-chat-dots text-primary"></i>
+            </div>
+            <div class="feature-content">
+                <h3 class="h5 mb-2">Comments & Discussions</h3>
+                <p class="text-muted">Engage in meaningful discussions</p>
+            </div>
+        </li>
+        <li class="feature-item mb-4 hover-lift">
+            <div class="feature-icon">
+                <i class="bi bi-hand-thumbs-up text-primary"></i>
+            </div>
+            <div class="feature-content">
+                <h3 class="h5 mb-2">Upvoting System</h3>
+                <p class="text-muted">Highlight the most helpful resources</p>
+            </div>
+        </li>
+        <li class="feature-item mb-4 hover-lift">
+            <div class="feature-icon">
+                <i class="bi bi-people text-primary"></i>
+            </div>
+            <div class="feature-content">
+                <h3 class="h5 mb-2">Class Organization</h3>
+                <p class="text-muted">Keep your materials organized by course</p>
+            </div>
+        </li>
+    </ul>
+
+{% else %}
+    <!-- Welcome Section for Logged in users-->
+    <div class="welcome-section px-4 py-5 my-5 text-center">
+        <h1 class="display-4 fw-bold text-primary mb-4 animate-fade-in">
+            Welcome back, {{ user.username }}! <span class="wave">👋</span>
+        </h1>
+        <div class="col-lg-6 mx-auto">
+            <p class="lead mb-4 animate-fade-in-up">
+                Ready to get started with your learning journey?
+            </p>
+            <div class="d-grid gap-3 d-sm-flex justify-content-sm-center animate-fade-in-up">
+                {% if not is_pma_admin %}
+                    <a href="{% url 'projects:project_list' %}" 
+                    class="btn btn-primary btn-lg px-4 hover-scale">
+                        <i class="bi bi-folder-fill me-2"></i>My Projects
+                    </a>
+                {% endif %}
+                <a href="{% url 'classes:class_list' %}" class="btn btn-outline-primary btn-lg px-4">
+                    <i class="bi bi-book-fill me-2"></i>Go to Classes
+                </a>
+            </div>
+        </div>
+    </div>
+{% endif %}
+
+
+<style>
+.icon-square {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 0.75rem;
+}
+
+.text-primary {
+    color: #232D4B !important; /* UVA blue */
+}
+
+.btn-primary {
+    background-color: #232D4B;
+    border-color: #232D4B;
+}
+
+.btn-primary:hover {
+    background-color: #2c3860;
+    border-color: #2c3860;
+}
+
+.feature-list {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.feature-item {
+    padding: 1.5rem;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.feature-icon {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+}
+
+.hover-lift:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.hover-scale:hover {
+    transform: scale(1.05);
+}
+
+.animate-fade-in {
+    animation: fadeIn 1s ease-in;
+}
+
+.animate-fade-in-up {
+    animation: fadeInUp 0.8s ease-out;
+}
+
+
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+</style>
+
+
+{% endblock %}

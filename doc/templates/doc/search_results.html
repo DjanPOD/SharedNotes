@@ -1,0 +1,279 @@
+{% extends 'base.html' %}
+
+{% block title%}
+Search Results: {{query}}
+{% endblock%}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="col-lg-8 offset-lg-2">
+        <!-- Search Header -->
+        <div class="search-header mb-4">
+            <h1 class="h2 mb-3">Document Search</h1>
+            
+            <!-- Search Form -->
+            <form method="GET" action="{% url 'projects:search_documents' %}" class="search-form">
+                <div class="input-group input-group-lg shadow-sm">
+                    <span class="input-group-text bg-white border-end-0">
+                        <i class="bi bi-search text-muted"></i>
+                    </span>
+                    <input type="text" 
+                           name="q" 
+                           class="form-control border-start-0"
+                           placeholder="Search documents by title or tags..."
+                           value="{{ query }}"
+                           aria-label="Search documents">
+                    <button class="btn btn-primary px-4" type="submit">
+                        Search
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        {% if query %}
+            <!-- Search Results Section -->
+            <div class="search-results">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h2 class="h4 mb-0">Results for "{{ query }}"</h2>
+                    <span class="badge bg-primary">{{ documents|length }} results</span>
+                </div>
+
+                {% if documents %}
+                    <!-- Results List -->
+                    <div class="documents-list">
+                        {% for document in documents %}
+                            <div class="card mb-3 document-card hover-shadow">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <!-- Document Icon and Type -->
+                                        <div class="col-auto">
+                                            {% with ext=document.file.name|lower %}
+                                                {% if '.pdf' in ext %}
+                                                    <i class="bi bi-file-pdf text-danger display-5"></i>
+                                                {% elif '.doc' in ext or '.docx' in ext %}
+                                                    <i class="bi bi-file-word text-primary display-5"></i>
+                                                {% elif '.jpg' in ext or '.png' in ext or '.gif' in ext %}
+                                                    <i class="bi bi-file-image text-success display-5"></i>
+                                                {% else %}
+                                                    <i class="bi bi-file-text text-secondary display-5"></i>
+                                                {% endif %}
+                                            {% endwith %}
+                                        </div>
+
+                                        <!-- Document Details -->
+                                        <div class="col">
+                                            <div class="d-flex justify-content-between align-items-start">
+                                                <div>
+                                                    <h3 class="h5 mb-1">
+                                                        {% if document.project and document.project.project_id and document.project.class_belongs_to %}
+                                                        <a href="{% url 'classes:projects:doc:document_detail' document.project.class_belongs_to.class_id document.project.project_id document.id %}"
+                                                        class="text-decoration-none">
+                                                            {{ document.title }}
+                                                        </a>
+                                                    {% else %}
+                                                        {{ document.title }}
+                                                        <small class="text-muted">(Document unavailable)</small>
+                                                    {% endif %}
+                                                    </h3>
+                                                    
+                                                    <!-- Project and Class Info -->
+                                                    <div class="document-meta text-muted small mb-2">
+                                                        {% if document.project %}
+                                                            <span class="me-3">
+                                                                <i class="bi bi-folder2"></i> 
+                                                                {{ document.project.name }}
+                                                            </span>
+                                                            {% if document.project.class_belongs_to %}
+                                                                <span class="me-3">
+                                                                    <i class="bi bi-mortarboard"></i>
+                                                                    {{ document.project.class_belongs_to.name }}
+                                                                    ({{ document.project.class_belongs_to.class_code }})
+                                                                </span>
+                                                            {% endif %}
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+
+                                               
+                                                <div>
+                                                    {% if document.project.owner == user %}
+                                                        <span class="badge bg-primary">
+                                                            <i class="bi bi-person-check"></i> Project Owner
+                                                        </span>
+                                                    {% elif user in document.project.members.all %}
+                                                        <span class="badge bg-info">
+                                                            <i class="bi bi-person"></i> Member
+                                                        </span>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+
+                                            <!-- Document Description -->
+                                            {% if document.description %}
+                                                <p class="mb-2 text-muted">
+                                                    {{ document.description|truncatechars:150 }}
+                                                </p>
+                                            {% endif %}
+
+                                            <div class="tags-section mb-2">
+                                                {% for tag in document.tags.all %}
+                                                    <a href="?q={{ tag.name }}" 
+                                                       class="badge bg-light text-dark border text-decoration-none tag-link"
+                                                       title="Search for '{{ tag.name }}'"
+                                                       data-tag="{{ tag.name }}"
+                                                       onclick="searchTag(event, this.dataset.tag, Boolean('{{ query }}'))">
+                                                        <i class="bi bi-tag"></i> {{ tag.name }}
+                                                    </a>
+                                                {% endfor %}
+                                            </div>
+
+                                            <!-- Document Information -->
+                                            <div class="document-footer small text-muted">
+                                                <span class="me-3">
+                                                    <i class="bi bi-person-circle"></i>
+                                                    <a href="{% url 'profiles:profile' document.owner.username %}">{{ document.owner.username }}</a>
+                                                </span>
+                                                <span class="me-3">
+                                                    <i class="bi bi-calendar"></i>
+                                                    {{ document.date_uploaded|date:"M d, Y" }}
+                                                </span>
+                                                <span class="me-3">
+                                                    <i class="bi bi-eye"></i>
+                                                    {{ document.views }} views
+                                                </span>
+                                                <span>
+                                                    <i class="bi bi-heart"></i>
+                                                    {{ document.likes }} likes
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <!-- No Results Message -->
+                    <div class="no-results text-center py-5">
+                        <i class="bi bi-search display-1 text-muted"></i>
+                        <h3 class="h4 mt-3">No documents found</h3>
+                        <p class="text-muted">
+                            Try adjusting your search terms
+                        </p>
+                    </div>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    .search-form {
+        transition: all 0.3s ease;
+    }
+
+    .search-form:focus-within {
+        transform: scale(1.01);
+    }
+
+    .document-card {
+        transition: all 0.2s ease;
+        border: none;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .hover-shadow:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        transform: translateY(-2px);
+    }
+
+    .tags-section .badge {
+        margin-right: 0.5rem;
+        padding: 0.5em 0.8em;
+        font-weight: normal;
+    }
+
+    .document-meta i {
+        margin-right: 0.25rem;
+    }
+
+    .document-footer i {
+        margin-right: 0.25rem;
+    }
+
+    .no-results i {
+        opacity: 0.5;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .document-meta span {
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+    }
+
+
+    .tag-link {
+    margin-right: 0.5rem;
+    margin-bottom: 0.5rem;
+    padding: 0.5em 0.8em;
+    font-weight: normal;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    display: inline-block;
+}
+
+.tag-link:hover {
+    background-color: #e9ecef !important;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.tag-link:active {
+    transform: translateY(0);
+    box-shadow: none;
+}
+
+.tag-link i {
+    margin-right: 0.25rem;
+    opacity: 0.7;
+}
+
+@keyframes btn-flash {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+.btn-flash {
+    animation: btn-flash 0.3s ease;
+}
+
+
+.tags-section {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+</style>
+
+
+</style>
+
+
+<script>
+    function searchTag(event, tagName, hasExistingQuery) {
+        event.preventDefault();
+        const searchInput = document.querySelector('input[name="q"]');
+        
+        searchInput.value = tagName;
+        const searchButton = searchInput.form.querySelector('button[type="submit"]');
+        searchButton.classList.add('btn-flash');
+        
+        setTimeout(() => {
+            searchInput.form.submit();
+        }, 100);
+    }
+</script>    
+{% endblock %}

@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+
+{% block title %}PMA Admin Info{% endblock %}
+
+{% block content %}
+<h1>PMA Admin Information</h1>
+<p>Welcome, {{ user_data.first_name }} {{ user_data.last_name }}!</p>
+<p>Email: {{ user_data.email }}</p>
+
+<p>As a PMA Admin, you have special permissions compared to common users.</p>
+
+
+{% endblock %}

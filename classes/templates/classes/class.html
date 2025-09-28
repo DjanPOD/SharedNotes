@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load grouptags %}
+
+{% block title %}{{ class.class_code }}: {{ class.name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4 text-center">{{ class.class_code }}: {{ class.name }}</h1>
+    <button class="btn btn-secondary mb-3" onclick="history.back()">Back</button>
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <p><strong>Description:</strong> {{ class.description }}</p>
+        </div>
+        
+        {% if user.is_authenticated and user.username != 'guest' %}
+        <div class="col-md-6">
+            <!-- <p><strong># of Members:</strong> {{ class.member_list.count }}</p> -->
+            <p><strong># of Projects:</strong> {{ projects|length }}</p>
+        </div>
+        {% endif %}
+    </div>
+    {% if user.is_authenticated %}
+        {% if user.username != 'guest' %}
+                {% if user_profile.user_type != 'PMA Admin'%}
+                    <div class="mb-3">
+                        <a href="{% url 'classes:projects:add_project' class_id=class.class_id  %}" class="btn btn-primary">
+                            <i class="bi bi-plus-circle"></i> Create Project
+                        </a>
+                    </div>
+                {% endif %}
+        {% endif %}
+        <h2 class="mb-3">Projects</h2>
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Project Name</th>
+                    <th>Description</th>
+                    <th>Creation Date</th>
+                    {% if user_profile.user_type == 'PMA Admin'%}
+                    <th>Actions</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for project in projects %}
+                    <tr>
+                        <td><a href="{% url 'classes:projects:project_detail' project.class_belongs_to.class_id project.project_id %}">
+                            {{ project.name }}</a></td>
+                        <td>{{ project.description }}</td>
+                        <td>{{ project.date_created|date:"M d, Y" }}</td>
+                        {% if user in class.pma_admins.all %}
+                            <td>
+                                <a href="{% url 'classes:projects:delete_project' project.class_belongs_to.class_id project.project_id %}" 
+                                class="btn btn-danger btn-sm">Delete</a>
+                            </td>
+                        {% endif %}
+                    </tr>
+                {% endfor %}
+                {% if not projects %}
+                    <tr>
+                        <td colspan="4" class="text-center">No projects available.</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    {% endif %}
+    
+    {% if user.username == 'guest' %}
+        <div class="container mt-5">
+            <div class="alert alert-secondary text-center" role="alert" style="max-width: 600px; margin: auto;">
+                <h4 class="alert-heading">Limited Access</h4>
+                <p>
+                    You're currently logged in as a guest. To join others, create new projects, and upload notes,
+                    please <strong>log out</strong> and log back in with Google.
+                </p>
+                <hr>
+                <a class="btn btn-secondary" href="{% url 'login:logout' %}">Log Out</a>
+            </div>
+        </div>
+    {% endif %}
+
+
+</div>
+{% endblock %}
