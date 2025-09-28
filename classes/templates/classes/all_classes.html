@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+
+{% block title %}Classes at UVA{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4 text-center">Classes at UVA</h1>
+    <button class="btn btn-secondary mb-3" onclick="history.back()">Back</button>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Class Code</th>
+                <th>Class Name</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for class in classes %}
+            <tr>
+                <td><a href="{% url 'classes:class_detail' class.class_id %}">{{ class.class_code }}</a></td>
+                <td>{{ class.name }}</td>
+                <td>{{ class.description }}</td>
+            </tr>
+            {% endfor %}
+            {% if not classes %}
+            <tr>
+                <td colspan="3" class="text-center">No classes available.</td>
+            </tr>
+            {% endif %}
+        </tbody>
+    </table>
+
+    {% if user.username == 'guest' %}
+        <div class="container mt-5">
+            <div class="alert alert-secondary text-center" role="alert" style="max-width: 600px; margin: auto;">
+                <h4 class="alert-heading">Limited Access</h4>
+                <p>
+                    You're currently logged in as a guest. To join others, create new projects, and upload notes,
+                    please <strong>log out</strong> and log back in with Google.
+                </p>
+                <hr>
+                <a class="btn btn-secondary" href="{% url 'login:logout' %}">Log Out</a>
+            </div>
+        </div>
+    {% endif %}
+
+</div>
+{% endblock %}

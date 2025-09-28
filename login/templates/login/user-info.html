@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block title %}User Info{% endblock %}
+
+{% block content %}
+<h1>User Information</h1>
+<p>Email: {{ user_data.email }}</p>
+<p>First Name: {{ user_data.first_name }}</p>
+<p>Last Name: {{ user_data.last_name }}</p>
+
+{% if user.is_superuser %}
+
+<a class="btn btn-outline-primary" href="/admin/"> Admin</a>
+
+{% endif %}
+
+{% endblock %}

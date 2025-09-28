@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+
+{% block content %} 
+<div class="container mt-4">
+
+    {% if form.errors %}
+    <div class="alert alert-danger">
+        <ul>
+            {% for field, errors in form.errors.items %}
+                <li><strong>{{ field|capfirst }}</strong>: {{ errors|join:", " }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+
+             <div class="mb-3">
+                <a href="{% url 'profiles:profile' request.user.username %}" class="btn btn-outline-primary">
+                    <i class="bi bi-arrow-left"></i> Back to Profile
+                </a>
+            </div>
+
+            
+            <h2 class="text-center mb-4">Edit Profile</h2>
+            <div class="card">
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data">
+                        {% csrf_token %}
+
+                        <!-- First Name and Last Name -->
+                        <div class="mb-3">
+                            <label for="id_first_name" class="form-label">First Name</label>
+                            {{ form.first_name }}
+                        </div>
+                        <div class="mb-3">
+                            <label for="id_last_name" class="form-label">Last Name</label>
+                            {{ form.last_name }}
+                        </div>
+                        {% if form.year %}
+                            <div class="mb-3">
+                                <label for="id_year" class="form-label">Year</label>
+                                {{ form.year }}
+                            </div>
+                        {% endif %}
+
+                        {% if form.major %}
+                            <div class="mb-3">
+                                <label for="id_major" class="form-label">Major</label>
+                                {{ form.major }}
+                            </div>
+                        {% endif %}
+
+                        <div class="mb-3">
+                            <label for="id_computing_id" class="form-label">Computing ID</label>
+                            {{ form.computing_id }}
+                            <div class="form-text fw-bold text-primary">
+                                Your Computing ID is required and must be unique.
+                            </div>
+                            {% if form.computing_id.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.computing_id.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+
+                        {% if form.bio %}
+                        <div class="mb-3">
+                            <label for="id_bio" class="form-label">Bio</label>
+                            {{ form.bio }}
+                        </div>
+                        {% endif %}
+
+                        <div class="mb-3 text-center">
+                            <label for="id_profile_pic" class="form-label">Profile Picture</label>
+                            {{ form.profile_pic }}
+                        </div>
+
+                        <!-- Submit and Cancel Buttons -->
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="submit" class="btn btn-success">Save Changes</button>
+                            <a href="{% url 'profiles:profile' request.user.username %}" class="btn btn-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

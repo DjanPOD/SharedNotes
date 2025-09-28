@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    Profile - UVANotes
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mt-4">
+        <div class="col-md-3 justify-content-between">
+            <!--profile pic-->
+            <img src="{{ profile.profile_pic.url }}" alt="Profile Picture" class="img-thumbnail rounded-circle">
+            <!--username-->
+            <h4 class="mt-2">{{ profile.user.username }}</h4>
+
+        </div>
+        <div class="col-md-9">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2>{{ profile.user.username }}</h2>
+                        <a href="{% url 'profiles:editprofile' request.user.username %}" class="btn btn-primary">Edit Profile</a>
+            </div>
+            <p><strong>Name:</strong> {{ profile.user.first_name }} {{ profile.user.last_name }}</p>
+            <p><strong>Email:</strong> {{ profile.user.email }}</p>
+            <p><strong>Date Joined:</strong> {{ profile.date_joined }}</p>
+            {% if profile.user_type != 'PMA Admin' %}
+            <p><strong>Year:</strong> {{ profile.year }}</p>
+            <p><strong>Major:</strong> {{ profile.major }}</p>
+            <p><strong>Computing ID:</strong> {{ profile.computing_id }}</p>
+            <h5>Bio:</h5>
+            <ul>
+                {{ profile.bio }}  
+            </ul>
+            {% else%}
+            <h3><strong>PMA ADMIN</strong></h3>
+            {% endif%}
+
+        </div>
+    </div>
+
+    <!--<h4>Classes Taken:</h4>
+    <div class="col-md-12">
+        <ul class="list-inline">
+            <li class="list-inline-item">CS 3240</li>
+            <li class="list-inline-item">CS 3130</li>
+            <li class="list-inline-item">CS 3100</li>
+            <li class="list-inline-item">APMA 3100</li>
+        </ul>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <p><em>Note:</em> This page is currently set up to show what is possible for the profile page.</p>
+        </div>
+    </div>--> 
+</div>
+{% endblock %}

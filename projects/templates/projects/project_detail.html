@@ -1,0 +1,370 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    Project Notes - UVANotes
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <!-- Back Button and Title -->
+    <div class="row mb-4">
+        <!-- Back to My Projects Button -->
+        <div class="col-md-2">
+            <a href="{% url 'classes:class_detail' project.class_belongs_to.class_id %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Class
+            </a>            
+        </div>
+
+        <!-- Title of the project -->
+        <div class="col-md-6">
+            <h2>My Notes for: {{ project.name }}</h2> <!-- Dynamically populate project name -->
+        </div>
+
+        <!-- Project Information Visible to All Users -->
+        <h1>{{ project.title }}</h1>
+        <p><strong>Owner:</strong> <a href="{% url 'profiles:profile' project.owner.username %}">{{ project.owner.username }}</a></p>
+        <p><strong>Description:</strong> {{ class.description }}</p>
+        <p><strong>Creation Date:</strong> {{ project.date_created|date:"F j, Y" }}</p>
+         <!-- Show statistics for COMMON or PMA Admin -->
+        {% if request.user in project.members.all or user in class.pma_admins.all  %}
+        <p><strong>Number of Files:</strong> {{ project.document_set.count }}</p>
+        <p><strong>Number of Members:</strong> {{ project.members.count }}</p>
+        {% endif %}
+
+        {% if request.user == project.owner or request.user in project.members.all or user in class.pma_admins.all %}
+        <!-- Action Buttons (Add Document and Delete Project) -->
+        <div class="col-md-4 text-end">
+            <!-- Add Document Button -->
+            {% if not user in class.pma_admins.all %}
+                <a href="{% url 'classes:projects:doc:upload_document' project.class_belongs_to.class_id project.project_id%}" class="btn btn-success me-2">
+                    <i class="bi bi-plus-circle"></i> Add Document
+                </a>
+            {% endif %}
+            <!-- Delete Project Button (visible to project owner only) -->
+            {% if request.user == project.owner or user in class.pma_admins.all %}
+                <form method="POST" action="{% url 'classes:projects:delete_project' project.class_belongs_to.class_id project.project_id %}" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash"></i> Delete Project
+                    </button>
+                </form>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Sort Options -->
+    {% if request.user == project.owner or request.user in project.members.all or user in class.pma_admins.all %}
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <label for="sort" class="form-label"><strong>Sort:</strong></label>
+            <select class="form-select w-auto" id="sortSelect" onchange="sortDocuments()">
+                <option value="name_asc">A to Z</option>
+                <option value="name_desc">Z to A</option>
+                <option value="date_desc">Most Recent</option>
+                <option value="date_asc">Oldest</option>
+            </select>
+        </div>
+    </div>
+    {% endif %}
+
+   
+
+    <!-- Notes Table -->
+    {% if request.user == project.owner or request.user in project.members.all or user in class.pma_admins.all  %}
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th scope="col">Doc Name</th>
+                    <th scope="col">Date Published</th>
+                    <th scope="col">Due Date</th> 
+                    <th scope="col">Views</th>
+                    <th scope="col">Likes</th>
+                    <th scope="col">Tags</th>
+                    <th scope="col">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for document in documents %}
+                <tr>
+                    <td>
+                        <a href="{% url 'classes:projects:doc:document_detail' document.project.class_belongs_to.class_id project.project_id document.id%}"> {{ document.title }}</a>
+                    </td>
+                    <td>{{ document.date_uploaded|date:"m/d/Y" }}</td>
+                    <td>
+                        {% if document.due_date %}
+                            {{ document.due_date|date:"m/d/Y" }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>{{ document.views }}</td>
+                    <td>{{ document.likes }}</td>
+                    <td>
+                        <div class="tags-section mb-2">
+                            {% for tag in document.tags.all %}
+                                <a href="?q={{ tag.name }}" 
+                                    class="badge bg-light text-dark border text-decoration-none tag-link"
+                                    title="Search for '{{ tag.name }}'"
+                                    data-tag="{{ tag.name }}"
+                                    onclick="searchTag(event, this.dataset.tag, Boolean('{{ query }}'))">
+                                    <i class="bi bi-tag"></i> {{ tag.name }}
+                                </a>
+                            {% endfor %}
+                        </div>
+                    </td>
+                    <td>
+                        <!-- Edit/Delete buttons shown only to the owner of the document -->
+                        {% if request.user == document.owner or user in class.pma_admins.all  %}
+                            <form action="{% url 'classes:projects:doc:delete_document' document.project.class_belongs_to.class_id project.project_id document.id %}" method="POST" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                            </form>
+                        {% endif %}
+                            <a href="{% url 'classes:projects:doc:document_detail' document.project.class_belongs_to.class_id project.project_id document.id%}" class="btn btn-secondary btn-sm">View</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center">No documents available for this project.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <!-- Comments Section -->
+    {% if request.user == project.owner or request.user in project.members.all or user in class.pma_admins.all%}
+    <div class="row mt-5">
+        <div class="col-12">
+            <h4>Comments</h4>
+        
+            {% if user not in class.pma_admins.all%}
+            <!-- Comment Form -->
+            <form method="POST" class="mb-4">
+                {% csrf_token %}
+                <div class="form-group">
+                    {{ comment_form.content }}
+                </div>
+                <button type="submit" class="btn btn-primary mt-2">Add Comment</button>
+            </form>
+            {% endif %}
+
+            <!-- Comments List -->
+            <div class="comments-section">
+                {% for comment in comments %}
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <h6 class="card-subtitle mb-2 text-muted">
+                                    {{ comment.author.username }} - {{ comment.created_at|date:"M d, Y H:i" }}
+                                </h6>
+                                {% if request.user == comment.author or request.user == project.owner %}
+                                    <form method="POST" action="{% url 'projects:delete_comment' project.class_belongs_to.class_id project.project_id comment.id %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-danger btn-sm">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            </div>
+                            <p class="card-text">{{ comment.content }}</p>
+                        </div>
+                    </div>
+                {% empty %}
+                    <p class="text-muted">No comments yet.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {%endif%}
+
+    <!-- Member List And Delete Capabilities -->
+
+    {% if request.user == project.owner or user in class.pma_admins.all  %}
+    <h3>Project Members</h3>
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Member Name</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for member in project.members.all %}
+                            <tr>
+                                <td>{{ member.username }}</td>
+                                {% if member != project.owner %}
+                                <td>
+                                    {% if request.user == project.owner or user in class.pma_admins.all  %}
+                                        <!-- Remove Member Button -->
+                                        <form method="POST" action="{% url 'classes:projects:remove_member' project.class_belongs_to.class_id project.project_id member.id %}" style="display:inline;">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to remove {{ member.username }} from this project?');">
+                                                Remove
+                                            </button>
+                                        </form>
+                                    {% endif %}
+                                </td>
+                                {% else%}
+                                <td>Owner</td>
+                                {% endif %}
+                            </tr>         
+
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% endif %}
+
+    <!-- Request to Join Button -->
+    {% if not user in class.pma_admins.all %}
+        {% if request.user != project.owner and request.user not in project.members.all and not user in class.pma_admins.all  %}
+            {% if request.user.username != 'guest' %}
+            <form method="POST" action="{% url 'classes:projects:request_to_join_project' project.class_belongs_to.class_id  project.project_id %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-primary">Request to Join Project</button>
+            </form>
+            {% endif %}
+        {% endif %}
+    {% endif %}
+
+    <!-- Leave Project Button -->
+    {% if request.user in project.members.all and request.user != project.owner %}
+        <form method="POST" action="{% url 'projects:leave_project' project.project_id %}" onsubmit="return confirm('Are you sure you want to leave this project?');">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger">
+                <i class="bi bi-box-arrow-left"></i> Leave Project
+            </button>
+        </form>
+    {% endif %}
+
+    <!-- Deny or Approve Request List -->
+    {% if request.user == project.owner %}
+    <div class="row mt-5">
+        <div class="col-md-12">
+            <h4>Pending Join Requests</h4>
+            {% if join_requests %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th scope="col">Username</th>
+                                <th scope="col">Request Date</th>
+                                <th scope="col">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user_request in join_requests %}
+                            <tr>
+                                <td>{{ user_request.user.username }}</td>
+                                <td>{{ user_request.timestamp|date:"m/d/Y H:i" }}</td>
+                                <td>
+                                    <form method="POST" action="{% url 'classes:projects:approve_request' project.class_belongs_to.class_id project.project_id user_request.user.id %}" style="display:inline;">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-success btn-sm">Approve</button>
+                                    </form>
+                                    <form method="POST" action="{% url 'classes:projects:deny_request' project.class_belongs_to.class_id  project.project_id user_request.user.id %}" style="display:inline;">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-danger btn-sm">Deny</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p>No pending requests.</p>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if user.username == 'guest' %}
+        <div class="container mt-5">
+            <div class="alert alert-secondary text-center" role="alert" style="max-width: 600px; margin: auto;">
+                <h4 class="alert-heading">Limited Access</h4>
+                <p>
+                    You're currently logged in as a guest. To join others, create new projects, and upload notes,
+                    please <strong>log out</strong> and log back in with Google.
+                </p>
+                <hr>
+                <a class="btn btn-secondary" href="{% url 'login:logout' %}">Log Out</a>
+            </div>
+        </div>
+    {% endif %}
+
+</div>
+
+<style>
+    .comments-section {
+    max-height: 500px;
+    overflow-y: auto;
+    }
+
+    .card-body {
+        padding: 1rem;
+    }
+</style>
+
+<script>
+    function searchTag(event, tagName, hasExistingQuery) {
+        event.preventDefault();
+        const searchInput = document.querySelector('input[name="q"]');
+        
+        searchInput.value = tagName;
+        const searchButton = searchInput.form.querySelector('button[type="submit"]');
+        searchButton.classList.add('btn-flash');
+        
+        setTimeout(() => {
+            searchInput.form.submit();
+        }, 100);
+    }
+
+    function sortDocuments() {
+    const table = document.querySelector('table tbody');
+    const rows = Array.from(table.getElementsByTagName('tr'));
+    const sortSelect = document.getElementById('sortSelect');
+    const sortValue = sortSelect.value;
+
+    rows.sort((a, b) => {
+        let aValue, bValue;
+        
+        switch(sortValue) {
+            case 'name_asc':
+            case 'name_desc':
+                aValue = a.cells[0].textContent.trim().toLowerCase();
+                bValue = b.cells[0].textContent.trim().toLowerCase();
+                return sortValue === 'name_asc' 
+                    ? aValue.localeCompare(bValue)
+                    : bValue.localeCompare(aValue);
+                
+            case 'date_asc':
+            case 'date_desc':
+                aValue = new Date(a.cells[1].textContent);
+                bValue = new Date(b.cells[1].textContent);
+                return sortValue === 'date_asc'
+                    ? aValue - bValue
+                    : bValue - aValue;
+        }
+    });
+
+    while (table.firstChild) {
+        table.removeChild(table.firstChild);
+    }
+
+    rows.forEach(row => table.appendChild(row));
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    if (document.getElementById('sortSelect')) {
+        sortDocuments();
+    }
+});
+
+</script> 
+{% endblock %}
